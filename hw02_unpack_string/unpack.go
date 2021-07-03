@@ -9,45 +9,59 @@ import (
 
 var ErrInvalidString = errors.New("invalid string")
 
+const (
+	stateNormal = iota
+	stateEscape
+	escaper = '\\'
+)
+
 func Unpack(str string) (string, error) {
+	var buffer rune
 	var result strings.Builder
-	esc := '\\'
-	slice := []rune(str)
-	last := len(slice) - 1
 
-	for i := 0; i <= last; i++ {
-		char := slice[i]
-
-		// мы не должны никогда попадать на цифру, если предыдущий символ не экранируюший
-		if unicode.IsDigit(char) && (i == 0 || slice[i-1] != esc) {
-			return "", ErrInvalidString
+	flushBuffer := func(repeat int) {
+		if buffer > 0 {
+			result.WriteString(strings.Repeat(string(buffer), repeat))
 		}
+		buffer = 0
+	}
 
-		// если последний символ, прибавляем его и выходим
-		if i == last {
-			result.WriteRune(char)
-			break
-		}
-
-		next := slice[i+1]
-
+	state := stateNormal
+	for _, char := range str {
 		switch {
-		case next == esc: // следующий символ экранирующий
-			result.WriteRune(char)
-			i++
+		case state == stateNormal && char == escaper:
+			flushBuffer(1)
+			state = stateEscape
 
-		case unicode.IsDigit(next): // следующий символ цифра
-			num, err := strconv.Atoi(string(next))
+		case state == stateNormal && unicode.IsDigit(char):
+			if buffer == 0 {
+				return "", ErrInvalidString
+			}
+			repeat, err := strconv.Atoi(string(char))
 			if err != nil {
 				return "", err
 			}
-			result.WriteString(strings.Repeat(string(char), num))
-			i++
+			flushBuffer(repeat)
 
-		default: // следующий символ не цифра и не экранирующий
-			result.WriteRune(char)
+		case state == stateNormal:
+			flushBuffer(1)
+			buffer = char
+
+		case state == stateEscape && (unicode.IsDigit(char) || char == escaper):
+			buffer = char
+			state = stateNormal
+
+		default:
+			return "", ErrInvalidString
 		}
 	}
 
+	// проход по строке должен заканчиваться в нормальном состоянии т.е. не должно не примененных слэшей или цифр
+	if state != stateNormal {
+		return "", ErrInvalidString
+	}
+
+	// последний
+	flushBuffer(1)
 	return result.String(), nil
 }
