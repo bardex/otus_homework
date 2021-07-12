@@ -1,10 +1,51 @@
 package hw04lrucache
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
+
+func TestMy(t *testing.T) {
+	l := NewList()
+	l.PushFront(30)
+	helper(l)
+	l.PushFront(20)
+	helper(l)
+	i10 := l.PushFront(10)
+	helper(l)
+
+	i40 := l.PushBack(40)
+	helper(l)
+	i50 := l.PushBack(50)
+	helper(l)
+	i60 := l.PushBack(60)
+	helper(l)
+
+	l.Remove(i10)
+	helper(l)
+
+	l.Remove(i60)
+	helper(l)
+
+	l.MoveToFront(i40)
+	helper(l)
+
+	l.MoveToFront(i50)
+	helper(l)
+}
+
+func helper(l List) {
+	var e *ListItem
+	e = l.Front()
+	fmt.Printf("(%d): ", l.Len())
+	for e != nil {
+		fmt.Print(e.Value, " -> ")
+		e = e.Next
+	}
+	fmt.Println()
+}
 
 func TestList(t *testing.T) {
 	t.Run("empty list", func(t *testing.T) {
