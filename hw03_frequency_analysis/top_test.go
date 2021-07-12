@@ -1,13 +1,14 @@
 package hw03frequencyanalysis
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
 // Change to true if needed.
-var taskWithAsteriskIsCompleted = false
+var taskWithAsteriskIsCompleted = true
 
 var text = `Как видите, он  спускается  по  лестнице  вслед  за  своим
 	другом   Кристофером   Робином,   головой   вниз,  пересчитывая
@@ -79,4 +80,50 @@ func TestTop10(t *testing.T) {
 			require.Equal(t, expected, Top10(text))
 		}
 	})
+}
+
+// Тестируем словоформы в разных регистрах, языках и со знаками пунктуации.
+func TestWordForms(t *testing.T) {
+	tests := []struct {
+		n        string
+		input    string
+		expected []string
+	}{
+		{n: "ноги", input: `Нога: нога, нога. Нога! Нога? - Нога "НОГА" 'нога'`, expected: []string{"нога"}},
+		{n: "руки", input: `рука Руки руку рукой`, expected: []string{"рука", "руки", "рукой", "руку"}},
+		{
+			n:        "тире",
+			input:    `Какой-то какойто какой - то какой,то`,
+			expected: []string{"какой", "какой,то", "какой-то", "какойто", "то"},
+		},
+		{n: "пробелы", input: "A\tb\rc\n d", expected: []string{"a", "b", "c", "d"}},
+		{
+			n:        "языки",
+			input:    "Zoo! ZOO, zoo 動物園 動物園 велосипед Auto Автомобиль Bicycle",
+			expected: []string{"zoo", "動物園", "auto", "bicycle", "автомобиль", "велосипед"},
+		},
+	}
+	for _, tc := range tests {
+		tc := tc
+		t.Run(tc.n, func(t *testing.T) {
+			result := Top10(tc.input)
+			require.Equal(t, tc.expected, result)
+		})
+	}
+}
+
+// тестирование условия "первые 10 по алфавиту".
+func TestTenFirstByAsc(t *testing.T) {
+	words1 := []string{"a", "c", "e", "g", "i", "k", "m", "o", "q", "s", "u", "w", "y"}
+	words2 := []string{"b", "d", "f", "h", "j", "l", "n", "p", "r", "t", "v", "x", "z"}
+	expected := []string{"a", "c", "e", "g", "i", "k", "m", "o", "q", "s"} // первые 10 популярных по-алфавиту
+	text := strings.Builder{}
+	for _, w := range words1 {
+		text.WriteString(strings.Repeat(w+" ", 20))
+	}
+	for _, w := range words2 {
+		text.WriteString(strings.Repeat(w+" ", 10))
+	}
+	result := Top10(text.String())
+	require.Equal(t, expected, result)
 }
