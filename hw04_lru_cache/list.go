@@ -1,5 +1,10 @@
 package hw04lrucache
 
+const (
+	back  = "back"
+	front = "front"
+)
+
 type List interface {
 	Len() int
 	Front() *ListItem
@@ -28,73 +33,63 @@ func (l *list) Len() int {
 
 func (l *list) PushFront(v interface{}) *ListItem {
 	item := &ListItem{Value: v}
-	l.pushFrontItem(item)
-	return item
-}
-
-func (l *list) pushFrontItem(item *ListItem) *ListItem {
-	if l.len == 0 {
-		l.front = item
-		l.back = item
-	} else {
-		l.front.Prev = item
-		item.Next = l.front
-		l.front = item
-	}
-	l.len++
+	l.pushItem(item, front)
 	return item
 }
 
 func (l *list) PushBack(v interface{}) *ListItem {
 	item := &ListItem{Value: v}
-	if l.len == 0 {
-		l.front = item
-		l.back = item
-	} else {
-		l.back.Next = item
-		item.Prev = l.back
-		l.back = item
-	}
-	l.len++
+	l.pushItem(item, back)
 	return item
 }
 
-func (l *list) Remove(i *ListItem) {
-	if i.Prev == nil && i.Next == nil {
-		// элемент не принадлежит списку - ничего не делаем и выходим
+func (l *list) pushItem(item *ListItem, whereTo string) {
+	switch {
+	case l.len == 0:
+		l.front = item
+		l.back = item
+	case whereTo == front:
+		l.front.Prev = item
+		item.Next = l.front
+		l.front = item
+	case whereTo == back:
+		l.back.Next = item
+		item.Prev = l.back
+		l.back = item
+	default:
 		return
 	}
-	if i.Prev == nil {
-		// если это первый элемент в списке - то заменяем его на следующий элемент
+	l.len++
+}
+
+func (l *list) Remove(i *ListItem) {
+	// если удаляем первый элемент
+	if l.Front() == i {
 		l.front = i.Next
-	} else {
-		// если не первый - то переключаем выход предыдущего элемента на вход следующего
-		i.Prev.Next = i.Next
 	}
-	if i.Next == nil {
-		// если это последний элемент в списке - то заменяем его на предыдущий элемент
+	// если удаляем последний элемент
+	if l.Back() == i {
 		l.back = i.Prev
-	} else {
-		// если не последний - то переключаем вход следующего элемента на выход предыдущего
+	}
+	// соединяем предыдущий и следующий элементы вместо удаленного
+	if i.Next != nil {
 		i.Next.Prev = i.Prev
 	}
-	// у самого элемента ссылки на предыдущий и следующий элемент тоже надо обнулить
+	if i.Prev != nil {
+		i.Prev.Next = i.Next
+	}
 	i.Next = nil
 	i.Prev = nil
-	// уменьшаем длину списка
 	l.len--
 }
 
 func (l *list) MoveToFront(i *ListItem) {
-	if i.Prev == nil && i.Next == nil {
-		// элемент не принадлежит списку - ничего не делаем и выходим
+	// элемент уже первым является
+	if l.front == i {
 		return
 	}
-	if l.front == i {
-		return // уже все сделано)
-	}
 	l.Remove(i)
-	l.pushFrontItem(i)
+	l.pushItem(i, front)
 }
 
 func (l *list) Front() *ListItem {
