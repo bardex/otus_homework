@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 )
 
 var (
@@ -18,5 +19,14 @@ func init() {
 
 func main() {
 	flag.Parse()
-	// Place your code here.
+	if from == "" {
+		log.Fatal("Flag `-from` is required.")
+	}
+	if to == "" {
+		log.Fatal("Flag `-to` is required.")
+	}
+	err := Copy(from, to, offset, limit)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
